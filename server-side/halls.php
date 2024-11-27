@@ -56,6 +56,18 @@ function getAllHalls() {
     }
 }
 
+function getAllHallsByFiltering() {
+    $db = connection();
+    try {
+        $query = $db->prepare("SELECT `id`, `number`, `name`, `capacity`, `details`, `number_of_tables` FROM `halls`");
+        $query->execute();
+        $halls = $query->fetchAll(PDO::FETCH_ASSOC);
+        return $halls;
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
 function deleteHallById($hall_id) {
     $db = connection();
     try {

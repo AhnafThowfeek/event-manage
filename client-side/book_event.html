@@ -40,7 +40,7 @@
     </header>
 
     <section class="insert-data">
-        <form action="http://eventmanager.local/form-submit/api" method="post" enctype="multipart/form-data">
+        <form action="http://eventproadmin.local/form-submit/api" method="post" enctype="multipart/form-data">
             <h3>Fullfill the below form to book the Event</h3>
 
             <!-- Client Details -->
@@ -59,17 +59,32 @@
             <fieldset>
                 <legend>Event Details</legend>
                 <label for="select-event">Select the Event</label>
-                <select name="select-event" id="select-event" required>
-                    <option value="Wedding">Wedding</option>
-                    <option value="Birthday">Birthday</option>
-                    <option value="Holly">Holly</option>
+                <select name="select-event" id="select-event" onchange="handleCustomeEvent(event)">
+                    <option value="">Custom Event</option>
                 </select>
-                <input type="datetime-local" name="event_date" required placeholder="Event Date" class="box">
+                <input id="event-date-picker" type="datetime-local" name="event_date" required placeholder="Event Date"
+                    class="box">
                 <input type="number" name="num_participants" required placeholder="Number of Participants" class="box"
                     min="1">
-                <input type="text" name="event_location" placeholder="Event Location" class="box" maxlength="255">
 
-                
+                <div id="custom-event-containers">
+                    <div id="custom-event-details">
+                        <input type="text" name="event_name" placeholder="Event Name" class="box" maxlength="255">
+                        <input type="text" name="event_location" placeholder="Event Location" class="box"
+                            maxlength="255">
+                        <select name="select-hall" id="select-halls" required>
+                            <option value="">Select the Hall</option>
+                        </select>
+                        <select name="select-food" id="select-foods">
+                            <option value="">Select the Food</option>
+                        </select>
+                        <select name="select-beverage" id="select-beverages">
+                            <option value="">Select the Beverages</option>
+                        </select>
+                        <textarea name="details" required placeholder="More Details" class="box"
+                            maxlength="255"> </textarea>
+                    </div>
+                </div>
             </fieldset>
 
             <button type="submit">Submit Details</button>
@@ -134,6 +149,104 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        let customEventDetailsBackup;
+
+        function handleCustomeEvent(event) {
+            const customEventDetailsContainer = document.getElementById('custom-event-containers');
+            const customEventDetails = document.getElementById('custom-event-details');
+            const selectedValue = event.currentTarget.value;
+
+            if (selectedValue !== "") {
+                if (!customEventDetailsBackup) {
+                    customEventDetailsBackup = customEventDetails.cloneNode(true);
+                }
+                customEventDetails.remove();
+            } else {
+                if (!customEventDetailsContainer.contains(customEventDetails)) {
+                    customEventDetailsContainer.appendChild(customEventDetailsBackup);
+                    customEventDetailsBackup = null;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const eventDatePicker = document.getElementById('event-date-picker');
+            const now = new Date();
+            const formattedDateTime = now.toISOString().slice(0, 16); // Format to 'YYYY-MM-DDTHH:mm'
+            eventDatePicker.min = formattedDateTime;
+
+
+            const eventsSelecter = document.getElementById('select-event');
+            const getEvents = async () => {
+                const baseURL = 'http://eventproadmin.local/event/api/getallevents';
+                const response = await fetch(baseURL, {
+                    method: 'GET'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    data['events'].forEach((event) => {
+                        const container = document.createElement('div');
+                        container.innerHTML = `<option value="${event.id}">${event.event_name} - Fee: LKR ${event.event_fee} : ${event.details}</option>`;
+                        eventsSelecter.appendChild(container.firstElementChild);
+                    });
+                }
+            }
+            getEvents();
+
+            const hallsSelecter = document.getElementById('select-halls');
+            const getHalls = async () => {
+                const baseURL = 'http://eventproadmin.local/halls/api/getallhalls';
+                const response = await fetch(baseURL, {
+                    method: 'GET'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    data['halls'].forEach((hall) => {
+                        const container = document.createElement('div');
+                        container.innerHTML = `<option value="${hall.id}">${hall.number} - ${hall.name} - ${hall.capacity} Peoples & ${hall.number_of_tables} Tables. <p> ${hall.details} </p></option>`;
+                        hallsSelecter.appendChild(container.firstElementChild);
+                    });
+                }
+            }
+            getHalls();
+
+            const foodsSelecter = document.getElementById('select-foods');
+            const getFoods = async () => {
+                const baseURL = 'http://eventproadmin.local/event/api/getallfoods';
+                const response = await fetch(baseURL, {
+                    method: 'GET'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    data['foods'].forEach((food) => {
+                        const container = document.createElement('div');
+                        container.innerHTML = `<option value="${food.id}">${food.name} - ${food.max_plates} Plates Per LKR ${food.per_plate_price}</option>`;
+                        foodsSelecter.appendChild(container.firstElementChild);
+                    });
+                }
+            }
+            getFoods();
+
+            const beveragesSelecter = document.getElementById('select-beverages');
+            const getBeverages = async () => {
+                const baseURL = 'http://eventproadmin.local/event/api/getallbeverages';
+                const response = await fetch(baseURL, {
+                    method: 'GET'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    data['beverages'].forEach((beverage) => {
+                        const container = document.createElement('div');
+                        container.innerHTML = `<option value="${beverage.id}">${beverage.name} - ${beverage.max_glass} Glasses Per LKR ${beverage.per_glass_price} - ${beverage.max_bottle} Bottles Per LKR ${beverage.per_bottle_price}</option>`;
+                        beveragesSelecter.appendChild(container.firstElementChild);
+                    });
+                }
+            }
+            getBeverages();
+
+        });
+    </script>
 </body>
 
 </html>

@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 
+    <title>Event Management</title>
 </head>
 
 <body>
@@ -24,7 +24,7 @@
             <a href="contact.html">Contact</a>
         </nav>
 
-        <div class="user-icons">
+        <div class="user-icons" style="display: none;">
             <div id="user-btn" class="fas fa-user"></div>
         </div>
         <div class="profile">
@@ -36,26 +36,21 @@
             <p class="account"><a href="signin.html">Login or Register</a></p>
         </div>
 
-
         <div id="menu-bars" class="fas fa-bars"></div>
     </header>
 
-    <div class="h1-heading">
-        <h1 class="heading">Our<span> events</span></h1>
-    </div>
-
-    <div class="book_event">
-        <a href="book_event.html" class="btn">Book Now</a>
-    </div>
-
-    <section class="event" id="event">
-
-        <div id="event-box-container" class="box-container">
-            <!-- All Event Show Here -->
+    <section class="insert-data" style="margin: 180px auto;">
+        <div class="booked-event-success">
+            <fieldset>
+                <p style="text-align: center; font-size: 8rem; color: #ff3300;">
+                    <i class="fa-regular fa-circle-xmark"></i>
+                </p>
+                <h1 style="font-size: 3rem; text-align: center; color: #ff3300;">BOOKING EVENT IS FAILD.</h1>
+                <p style="font-size: 2rem; text-align: center;">When we trying to book the event some error came. so
+                    please try again with different details.</p>
+            </fieldset>
         </div>
     </section>
-
-
     <section class="footer">
         <div class="box-container">
             <a href="home.html" class="logo"><span>Event</span> Pro</a>
@@ -109,36 +104,6 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const eventContainer = document.getElementById('event-box-container');
-            const getEvents = async () => {
-                console.log("Working Gettings");
-                const baseURL = 'http://eventproadmin.local/event/api/getallevents';
-                const response = await fetch(baseURL, {
-                    method: 'GET'
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    data['events'].forEach((event) => {
-                        console.log(event);
-                        const container = document.createElement('div');
-                        container.innerHTML = `<div class="box">
-                                                    <img src="http://eventproadmin.local/${event.event_image_url}" alt="">
-                                                    <h3 class="title">${event.event_name}</h3>
-                                                    <div class="details">
-                                                        <p>${event.details}</p>
-                                                        <p>LKR ${event.event_fee}</p>
-                                                    </div>
-                                                </div>`;
-
-                        eventContainer.appendChild(container.firstElementChild);
-                    });
-                }
-            }
-            getEvents();
-        });
-    </script>
 </body>
 
 </html>

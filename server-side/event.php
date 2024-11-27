@@ -25,6 +25,20 @@ function getAllFoods() {
         return "Error When Fetching Food Items: " . $e->getMessage();
     }
 }
+function getAllFoodsByFiltering() {
+    $db = connection();
+    try {
+        $query = $db->prepare("SELECT `id`, `name`, `per_plate_price`, `max_plates` FROM `foods`");
+        $query->execute();
+        $foods = $query->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($foods as &$food){
+            $food['per_plate_price'] = number_format($food['per_plate_price'], 2);
+        }
+        return $foods;
+    } catch (Exception $e) {
+        return [];
+    }
+}
 function deleteFoodsById($foods_id) {
     $db = connection();
     try {
@@ -89,6 +103,21 @@ function getAllBeverages() {
         return $beverages;
     } catch (PDOException $e) {
         return "Error When Fetching Beverages: " . $e->getMessage();
+    }
+}
+function getAllBeveragesByFiltering() {
+    $db = connection();
+    try {
+        $query = $db->prepare("SELECT `id`, `name`, `per_glass_price`, `max_glass`, `max_bottle`, `per_bottle_price` FROM `beverages`");
+        $query->execute();
+        $beverages = $query->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($beverages as &$beverage){
+            $beverage['per_glass_price'] = number_format($beverage['per_glass_price'], 2);
+            $beverage['per_bottle_price'] = number_format($beverage['per_bottle_price'], 2);
+        }
+        return $beverages;
+    } catch (Exception $e) {
+        return [];
     }
 }
 function deleteBeveragesById($beverages_id) {
@@ -297,7 +326,7 @@ function getAllEvents($section) {
     $query = null;
     try {
         if($section === 'booked-events'){
-            $query = $db->prepare("SELECT * FROM `events` WHERE `client_id` IS NOT NULL");
+            $query = $db->prepare("SELECT events.*, clients.full_name AS client_name, clients.phone_number AS client_phone FROM `events` INNER JOIN `clients` ON events.client_id = clients.id WHERE events.client_id IS NOT NULL");
            
         } elseif($section === 'events') {
             $query = $db->prepare("SELECT * FROM `events` WHERE `client_id` IS NULL");
@@ -308,6 +337,21 @@ function getAllEvents($section) {
         }
         $query->execute();
         $events = $query->fetchAll(PDO::FETCH_ASSOC);
+        return $events;
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+function getAllEventsByFiltering() {
+    $db = connection();
+    try {
+        $query = $db->prepare("SELECT `id`, `event_name`, `event_image_url`, `event_fee`, `details` FROM `events` WHERE `client_id` IS NULL");
+        $query->execute();
+        $events = $query->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($events as &$event){
+            $event['event_fee'] = number_format($event['event_fee'], 2);
+        }
         return $events;
     } catch (Exception $e) {
         return [];
@@ -351,12 +395,25 @@ function getEventById($event_id) {
     }
 }
 
-function createClientEvent($client_id, $select_event, $event_date, $num_participants, $event_location, $is_confirm, $status, $hall_id, $food_id = null, $beverages_id = null) {
+function changeStatusEventById($event_id, $status) {
     $db = connection();
     try {
-        $base_query = "INSERT INTO `events` (client_id, event_name, event_date, num_participants, location, is_confirm, status, hall_id";
-        $values_placeholders = "?, ?, ?, ?, ?, ?, ?, ?";
-        $values = [ $client_id, $select_event, $event_date, $num_participants, $event_location, $is_confirm, $status, $hall_id];
+        $query = $db->prepare("UPDATE `events` SET status=? WHERE id=?");
+        $query->execute([$status, $event_id]);
+
+        return "Event Status Updated successfully!";
+    } catch (PDOException $e) {
+        return "Error When Updating the Event Status: " . $e->getMessage();
+    }
+}
+
+
+function createClientCustomeEvent($client_id, $select_event_name, $event_date, $num_participants, $event_location, $hall_id, $food_id = null, $beverages_id = null, $details) {
+    $db = connection();
+    try {
+        $base_query = "INSERT INTO `events` (client_id, event_name, event_date, num_participants, location, hall_id, details";
+        $values_placeholders = "?, ?, ?, ?, ?, ?, ?";
+        $values = [ $client_id, $select_event_name, $event_date, $num_participants, $event_location, $hall_id, $details];
 
         if ($food_id !== null) {
             $base_query .= ", food_id";
@@ -374,13 +431,51 @@ function createClientEvent($client_id, $select_event, $event_date, $num_particip
 
         $insert_data->execute($values);
 
-        return "Client Event Created Successfully!";
+        return true;
     } catch (PDOException $e) {
         error_log("Error When Creating Client Event: " . $e->getMessage(), 3, __DIR__ . "/error.log");
-        return "Error When Creating Client Event: " . $e->getMessage();
+        return false;
     } catch (Exception $e) {
         error_log("Error: " . $e->getMessage(), 3, __DIR__ . "/error.log");
-        return "Error: " . $e->getMessage();
+        return false;
+    }
+}
+
+function createClientEvent($client_id, $select_event_id, $event_date, $num_participants) {
+    $db = connection();
+    try {
+        $fetch_query = "SELECT * FROM `events` WHERE id = ?";
+        $fetch_stmt = $db->prepare($fetch_query);
+        $fetch_stmt->execute([$select_event_id]);
+
+        $original_event = $fetch_stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$original_event) {
+            throw new Exception("Event with ID $select_event_id not found.");
+        }
+
+        $new_event_data = $original_event;
+        unset($new_event_data['id']);
+        unset($new_event_data['created_at']);
+        unset($new_event_data['updated_at']);
+        $new_event_data['client_id'] = $client_id;
+        $new_event_data['event_date'] = $event_date;
+        $new_event_data['num_participants'] = $num_participants;
+
+        $columns = array_keys($new_event_data);
+        $placeholders = array_fill(0, count($columns), "?");
+        $insert_query = "INSERT INTO `events` (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $placeholders) . ")";
+        $insert_stmt = $db->prepare($insert_query);
+
+        $insert_stmt->execute(array_values($new_event_data));
+
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error When Creating Client Event: " . $e->getMessage(), 3, __DIR__ . "/error.log");
+        return false;
+    } catch (Exception $e) {
+        error_log("Error: " . $e->getMessage(), 3, __DIR__ . "/error.log");
+        return false;
     }
 }
 

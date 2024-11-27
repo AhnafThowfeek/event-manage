@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+header("Access-Control-Allow-Origin: http://eventpro.local");
+
 require __DIR__ . '/halls.php';
 require __DIR__ . '/event.php';
 require __DIR__ . '/admin.php';
@@ -25,45 +27,55 @@ if($function === 'api'){
     switch ($_SERVER["REQUEST_METHOD"]){
         case "POST":
             if($section === 'form-submit'){
-                $client_full_name = htmlspecialchars(trim($_POST['client_full_name']));
-                $client_phone_number = htmlspecialchars(trim($_POST['client_phone_number']));
-                $client_email = htmlspecialchars(trim($_POST['client_email']));
-                $client_address = htmlspecialchars(trim($_POST['client_address']));
+                try{
+                    $client_full_name = htmlspecialchars(trim($_POST['client_full_name']));
+                    $client_phone_number = htmlspecialchars(trim($_POST['client_phone_number']));
+                    $client_email = htmlspecialchars(trim($_POST['client_email']));
+                    $client_address = htmlspecialchars(trim($_POST['client_address']));
 
-                $client_id = registerNewClientFromEvents($client_full_name, $client_phone_number, $client_email, $client_address);
+                    $client_id = registerNewClientFromEvents($client_full_name, $client_phone_number, $client_email, $client_address);
 
-                $select_event = htmlspecialchars(trim($_POST['select-event']));
-                $event_date = htmlspecialchars(trim($_POST['event_date']));
-                $num_participants = htmlspecialchars(trim($_POST['num_participants']));
-                $event_location = htmlspecialchars(trim($_POST['event_location']));
-                $is_confirm = htmlspecialchars(trim($_POST['is_confirm']));
-                $status = htmlspecialchars(trim($_POST['status']));
-                $hall_id = htmlspecialchars(trim($_POST['hall_id']));
-                $food_id = htmlspecialchars(trim($_POST['food_id']));
-                $beverages_id = htmlspecialchars(trim($_POST['beverages_id']));
+                    $select_event_id = htmlspecialchars(trim($_POST['select-event']));
+                    $select_event_name = htmlspecialchars(trim($_POST['event_name']));
+                    $event_date = htmlspecialchars(trim($_POST['event_date']));
+                    $num_participants = htmlspecialchars(trim($_POST['num_participants']));
+                    $event_location = htmlspecialchars(trim($_POST['event_location']));
+                    $hall_id = htmlspecialchars(trim($_POST['select-hall']));
+                    $food_id = htmlspecialchars(trim($_POST['select-food']));
+                    $beverages_id = htmlspecialchars(trim($_POST['select-beverage']));
+                    $details = htmlspecialchars(trim($_POST['details']));
 
-                $result = createClientEvent($client_id, $select_event, $event_date, $num_participants, $event_location, $is_confirm, $status, $hall_id, $food_id, $beverages_id);
+                    if($select_event_id == "" || $select_event_id == null){
+                        $result = createClientCustomeEvent($client_id, $select_event_name, $event_date, $num_participants, $event_location, $hall_id, $food_id, $beverages_id, $details);
+                    } else {
+                        $result = createClientEvent($client_id, $select_event_id, $event_date, $num_participants);
+                    }
 
-                $message = [
-                    'client_full_name' => $client_full_name,
-                    'client_phone_number' => $client_phone_number,
-                    'client_email' => $client_email,
-                    'client_address' => $client_address,
-                    'select_event' => $select_event,
-                    'event_date' => $event_date,
-                    'num_participants' => $num_participants,
-                    'event_location' => $event_location,
-                    'is_confirm' => $is_confirm,
-                    'status' => $status,
-                    'hall_id' => $hall_id,
-                    'food_id' => $food_id,
-                    'beverages_id' => $beverages_id,
-                ];
-            
-                // Convert the array to a JSON string for readability in the log
-                error_log(json_encode($message, JSON_PRETTY_PRINT), 3, __DIR__ . "/error.log");
-                error_log($result, 3, __DIR__ . "/error.log");
-                header('Location: file:///C:/Users/asela/Downloads/client-side/book_event.html');
+                    $message = [
+                        'client_full_name' => $client_full_name,
+                        'client_phone_number' => $client_phone_number,
+                        'client_email' => $client_email,
+                        'client_address' => $client_address,
+                        'select_event_id' => $select_event_id,
+                        'select_event_name' => $select_event_name,
+                        'event_date' => $event_date,
+                        'num_participants' => $num_participants,
+                        'event_location' => $event_location,
+                        'hall_id' => $hall_id,
+                        'food_id' => $food_id,
+                        'beverages_id' => $beverages_id,
+                    ];
+                
+                    // Convert the array to a JSON string for readability in the log
+                    error_log(json_encode($message, JSON_PRETTY_PRINT), 3, __DIR__ . "/error.log");
+                    error_log($result, 3, __DIR__ . "/error.log");
+                    if(!$result){
+                        throw new Exception("Creating Event Faild.");
+                    }
+                    header('Location: http://eventpro.local/book_event_success.html');
+                } catch (Exception $e) {
+                    header('Location: http://eventpro.local/book_event_error.html');
+                }
                 exit();
             }
             break;
@@ -108,6 +120,28 @@ if($function === 'api'){
                         } else {
                             http_response_code(401);
                         }
+                    }
+                }
+            } else {
+                if ($section === 'event') {
+                    if ($subFunctions === 'getallevents') {
+                        echo json_encode(['events' => getAllEventsByFiltering()]);
+                        http_response_code(200);
+                        exit();
+                    } elseif ($subFunctions === 'getallfoods') {
+                        echo json_encode(['foods' => getAllFoodsByFiltering()]);
+                        http_response_code(200);
+                        exit();
+                    } elseif ($subFunctions === 'getallbeverages') {
+                        echo json_encode(['beverages' => getAllBeveragesByFiltering()]);
+                        http_response_code(200);
+                        exit();
+                    }
+                } elseif ($section === 'halls') {
+                    if ($subFunctions === 'getallhalls') {
+                        echo json_encode(['halls' => getAllHallsByFiltering()]);
+                        http_response_code(200);
+                        exit();
                     }
                 }
             }
@@ -322,7 +356,6 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                         $result = deleteHallById($expodeURL[3]);
                         echo ($result);
                     }
-                    header('Location: /halls');
                     exit();
                 }
             } elseif ($section === 'event') {
@@ -331,7 +364,24 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                         $result = deleteEventById($expodeURL[3]);
                         echo ($result);
                     }
-                    header('Location: /event');
+                    exit();
+                } elseif ($function === 'statusunpaid') {
+                    if ($expodeURL[3]) {
+                        $result = changeStatusEventById($expodeURL[3], 'unpaid');
+                        echo ($result);
+                    }
+                    exit();
+                } elseif ($function === 'statuspaid') {
+                    if ($expodeURL[3]) {
+                        $result = changeStatusEventById($expodeURL[3], 'paid');
+                        echo ($result);
+                    }
+                    exit();
+                } elseif ($function === 'statusprocess') {
+                    if ($expodeURL[3]) {
+                        $result = changeStatusEventById($expodeURL[3], 'processing');
+                        echo ($result);
+                    }
                     exit();
                 }
             }  elseif ($section === 'foods') {
@@ -340,7 +390,6 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                         $result = deleteFoodsById($expodeURL[3]);
                         echo ($result);
                     }
-                    header('Location: /event?eventsection=foods');
                     exit();
                 }
             }  elseif ($section === 'beverages') {
@@ -349,7 +398,6 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                         $result = deleteBeveragesById($expodeURL[3]);
                         echo ($result);
                     }
-                    header('Location: /event?eventsection=beverages');
                     exit();
                 }
             } else {
@@ -677,15 +725,24 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                             <?php if($row['event_date']): ?>
                                             <p>Date: <?= $row['event_date'] ?></p>
                                             <?php endif; ?>
+                                            <?php if($row['details']): ?>
                                             <p>Description: <?= $row['details'] ?></p>
+                                            <?php endif; ?>
                                             <h4>LKR <?= number_format($row['event_fee'], 2) ?></h4>
+                                            <p>Client: <?= $row['client_name'] ?> - <?= $row['client_phone'] ?></p>
                                         </div>
                                         <div class="event-actions">
                                             <div>
-                                                <p><?= $row['status'] ?></p>
+                                                <p><?= ucfirst($row['status']) ?></p>
                                             </div>
                                             <div style="display: flex; gap: 10px;">
-                                                <button data-event-id="<?= $row['id'] ?>" title="Pay" onclick="handleEventPay(event)"><i class="fa fa-money"></i></button>
+                                                <?php if($row['status'] === 'processing'): ?>
+                                                    <button data-event-id="<?= $row['id'] ?>" title="Pay" onclick="handleEventStatusPaid(event)"><i class="fa-solid fa-hand-holding-dollar"></i></button>
+                                                <?php elseif($row['status'] === 'paid'): ?>
+                                                    <button data-event-id="<?= $row['id'] ?>" title="Unpay" onclick="handleEventStatusUnpaid(event)"><i class="fa-regular fa-circle-xmark"></i></button>
+                                                <?php elseif($row['status'] === 'unpaid'): ?>
+                                                    <button data-event-id="<?= $row['id'] ?>" title="Processing" onclick="handleEventStatusProcessing(event)"><i class="fa-solid fa-spinner"></i></button>
+                                                <?php endif; ?>
                                                 <button data-event-id="<?= $row['id'] ?>" title="Edit" onclick="handleEventEdit(event)"><i class="fa fa-edit"></i></button>
                                                 <button data-event-id="<?= $row['id'] ?>" title="Delete" onclick="handleEventDelete(event)"><i class="fa fa-trash-alt"></i></button>
                                             </div>
@@ -802,6 +859,31 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                         function handleBeveragesDelete(event) {
                             const beveragesID = event.currentTarget.getAttribute('data-beverages-id');
                             const baseURL = window.location.origin + '/beverages/delete/' + beveragesID;
+                            fetch(baseURL, {
+                                method: "DELETE"
+                            });
+                            window.location.reload();
+                        }
+
+                        function handleEventStatusPaid(event) {
+                            const eventID = event.currentTarget.getAttribute('data-event-id');
+                            const baseURL = window.location.origin + '/event/statuspaid/' + eventID;
+                            fetch(baseURL, {
+                                method: "DELETE"
+                            });
+                            window.location.reload();
+                        }
+                        function handleEventStatusUnpaid(event) {
+                            const eventID = event.currentTarget.getAttribute('data-event-id');
+                            const baseURL = window.location.origin + '/event/statusunpaid/' + eventID;
+                            fetch(baseURL, {
+                                method: "DELETE"
+                            });
+                            window.location.reload();
+                        }
+                        function handleEventStatusProcessing(event) {
+                            const eventID = event.currentTarget.getAttribute('data-event-id');
+                            const baseURL = window.location.origin + '/event/statusprocess/' + eventID;
                             fetch(baseURL, {
                                 method: "DELETE"
                             });

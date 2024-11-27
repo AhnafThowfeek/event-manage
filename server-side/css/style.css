@@ -347,6 +347,18 @@ td i {
     background: #32bea6;
 }
 
+.fa-hand-holding-dollar{
+    background: #32bea6;
+}
+
+.fa-circle-xmark{
+    background: red;
+}
+
+.fa-spinner{
+    background: blue;
+}
+
 .fa-edit {
     background: #63b4f4;
 }
@@ -548,7 +560,6 @@ form button[type="submit"]:active{
 .event-details p {
     font-size: 0.9rem;
     color: #555;
-    margin: 5px 0;
 }
 
 .event-actions {

@@ -384,7 +384,7 @@ section{
     top: 0;
 }
 
-.event .box-container .box .icons{
+.event .box-container .box .details{
     position: absolute;
     bottom: -10rem;
     left: 0;
@@ -394,19 +394,18 @@ section{
     text-align: center;  
 }
 
-.event .box-container .box:hover .icons{
+.event .box-container .box:hover .details{
     bottom: 0;
 }
 
-.event .box-container .box .icons a{
+.event .box-container .box .details p:first-child{
+    font-size: 1.5rem;
+    color: white;
+}
+.event .box-container .box .details p:last-child{
     font-size: 2rem;
     margin: .5rem 1rem;
     color: white;
-}
-
-
-.event .box-container .box .icons a:hover{
-    color: var(--main-color);
 }
 
 .review .box{
@@ -589,9 +588,9 @@ section{
 }
 
 .book_event{
+    display: flex;
     justify-content: center;
     align-items: center;
-    padding-left: 150px;
 }
 
 .contact form{
@@ -968,7 +967,7 @@ section{
 
 
 .insert-data {
-    max-width: 500px;
+    max-width: 700px;
     margin: 70px auto;
     padding: 20px;
     background: linear-gradient(to bottom, #fff, #f9f9f9);
