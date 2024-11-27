@@ -1,0 +1,33 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+    
+    RewriteEngine On
+
+    # # Redirect /event to /index.php
+    # RewriteRule ^event$ /index.php [L]
+
+    # # Redirect /dashboard to /index.php
+    # RewriteRule ^dashboard$ /index.php [L]
+
+    # # Redirect /promotions to /index.php
+    # RewriteRule ^promotions$ /index.php [L]
+
+    #  # Redirect /payments to /index.php
+    # RewriteRule ^payments$ /index.php [L]
+
+    #  # Redirect /halls to /index.php
+    # RewriteRule ^halls$ /index.php [L]
+
+    #  # Redirect /services to /index.php
+    # RewriteRule ^services$ /index.php [L]
+
+    # # Redirect any URL like /page to /page.php
+    # RewriteRule ^([a-zA-Z0-9_-]+)$ $1.php [L,QSA]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>

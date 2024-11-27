@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+
+    <title>Event Management</title>
+</head>
+
+<body>
+
+    <header class="header">
+        <a href="home.html" class="logo"><span>Event</span> Pro</a>
+
+        <nav class="navbar">
+            <a href="home.html">Home</a>
+            <a href="about.html">About Us</a>
+            <a href="services.html">Services</a>
+            <a href="events.html">Events</a>
+            <a href="promotion.html">Promotions</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+
+        <div class="user-icons" style="display: none;">
+            <div id="user-btn" class="fas fa-user"></div>
+        </div>
+        <div class="profile">
+            <p class="name">Yaara Maryam</p>
+            <div class="flex">
+                <a href="profile.html" class="btn">Profile</a>
+                <a href="#" class="delete-btn">Logout</a>
+            </div>
+            <p class="account"><a href="signin.html">Login or Register</a></p>
+        </div>
+
+        <div id="menu-bars" class="fas fa-bars"></div>
+    </header>
+
+    <section class="insert-data">
+        <form action="http://eventmanager.local/form-submit/api" method="post" enctype="multipart/form-data">
+            <h3>Fullfill the below form to book the Event</h3>
+
+            <!-- Client Details -->
+            <fieldset>
+                <legend>Your Details</legend>
+                <input type="text" name="client_full_name" placeholder="Full Name" class="box" maxlength="100" required>
+                <input type="tel" name="client_phone_number" required placeholder="Phone Number (e.g., 077 1122334)"
+                    class="box" pattern="[0-9]{10,11}"
+                    onkeypress="if (isNaN(String.fromCharCode(event.keyCode))) return false;">
+                <input type="email" name="client_email" required placeholder="Email Address" class="box"
+                    maxlength="320">
+                <textarea name="client_address" required placeholder="Address" class="box" maxlength="255"></textarea>
+            </fieldset>
+
+            <!-- Event Details -->
+            <fieldset>
+                <legend>Event Details</legend>
+                <label for="select-event">Select the Event</label>
+                <select name="select-event" id="select-event" required>
+                    <option value="Wedding">Wedding</option>
+                    <option value="Birthday">Birthday</option>
+                    <option value="Holly">Holly</option>
+                </select>
+                <input type="datetime-local" name="event_date" required placeholder="Event Date" class="box">
+                <input type="number" name="num_participants" required placeholder="Number of Participants" class="box"
+                    min="1">
+                <input type="text" name="event_location" placeholder="Event Location" class="box" maxlength="255">
+
+                
+            </fieldset>
+
+            <button type="submit">Submit Details</button>
+            <div class="custom">
+                <p>If you want to add any custom changes! please click the below button</p>
+                <a href="contact.html" class="btn">Contact Us</a>
+            </div>
+
+        </form>
+
+    </section>
+    <section class="footer">
+        <div class="box-container">
+            <a href="home.html" class="logo"><span>Event</span> Pro</a>
+
+            <div class="box">
+                <h3>quick links</h3>
+                <a href="home.html"><i class="fas fa-arrow-right"></i>Home</a>
+                <a href="about.html"><i class="fas fa-arrow-right"></i>About</a>
+                <a href="services.html"><i class="fas fa-arrow-right"></i>Services</a>
+                <a href="events.html"><i class="fas fa-arrow-right"></i>Events</a>
+                <a href="promotion.html"><i class="fas fa-arrow-right"></i>Promotions</a>
+                <a href="contact.html"><i class="fas fa-arrow-right"></i>Contact</a>
+            </div>
+
+
+            <div class="box">
+                <h3>contact info</h3>
+                <a href="#"><i class="fas fa-phone"></i> +94 772 223 334</a>
+                <a href="#"><i class="fas fa-phone"></i> +94 111 222 333</a>
+                <a href="#"><i class="fas fa-envelope"></i>eventpro@gmail.com</a>
+                <a href="#"><i class="fas fa-envelope"></i>admin@gmail.com</a>
+                <a href="#"><i class="fas fa-map-marker-alt"></i> Colombo, Sri Lanka</a>
+            </div>
+
+            <div class="box">
+                <h3>follow us</h3>
+                <a href="#"><i class="fab fa-facebook"></i> Event Pro</a>
+                <a href="#"><i class="fab fa-instagram"></i> Event Pro</a>
+                <a href="#"><i class="fab fa-twitter"></i> Event Pro</a>
+                <a href="#"><i class="fab fa-linkedin"></i> Event Pro</a>
+
+            </div>
+
+        </div>
+    </section>
+
+    <div class="theme-toggler">
+        <div class="toggle-btn">
+            <i class="fas fa-cog"></i>
+        </div>
+
+        <h3>choose color</h3>
+        <div class="buttons">
+            <div class="theme-btn" style="background-color: #3867d6;"></div>
+            <div class="theme-btn" style="background-color: #f7b731;"></div>
+            <div class="theme-btn" style="background-color: #ff3300;"></div>
+            <div class="theme-btn" style="background-color: #20bf6b;"></div>
+            <div class="theme-btn" style="background-color: #fa8231;"></div>
+            <div class="theme-btn" style="background-color: #fc427b;"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
