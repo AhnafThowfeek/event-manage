@@ -90,6 +90,24 @@ function createFoodsTable($conn){
     }
 }
 
+function createPaymentsTable($conn){
+    $query = "CREATE TABLE IF NOT EXISTS payments (
+            id CHAR(36) NOT NULL,
+            amount DECIMAL(20,2) NOT NULL,
+            client_id INT NULL,
+            status ENUM('failed', 'pass') NOT NULL DEFAULT 'failed',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            FOREIGN KEY (client_id) REFERENCES clients(id))";
+    try{
+        $conn->exec($query);
+        echo "Table Created Successfully!";
+    } catch (PDOException $e) {
+        echo "Error Creating table: " . $e->getMessage();
+    }
+}
+
 function createClientsTable($conn){
     $query = "CREATE TABLE IF NOT EXISTS clients (
             id INT NOT NULL AUTO_INCREMENT,
@@ -181,4 +199,5 @@ function createAllTables(){
     createClientsTable(connection());
     createEventsTable(connection());
     createAdminTable(connection());
+    createPaymentsTable(connection());
 }

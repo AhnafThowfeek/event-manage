@@ -6,9 +6,10 @@ require __DIR__ . '/event.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/client.php';
 require __DIR__ . '/dashboard.php';
+require __DIR__ . '/payments.php';
 
-// require __DIR__ . '/create_table.php';
-// createAllTables();
+//  require __DIR__ . '/create_table.php';
+//  createAllTables();
 
 $current_page = explode("?", $_SERVER['REQUEST_URI'])[0];
 $search_params = explode("?", $_SERVER['REQUEST_URI'])[1] ?? null;
@@ -103,6 +104,17 @@ if($function === 'api'){
                         if ($expodeURL[4]) {
                             $hall_id = $expodeURL[4];
                             echo json_encode(['hall' => getHallById($hall_id)]);
+                            http_response_code(200);
+                            exit();
+                        } else {
+                            http_response_code(401);
+                        }
+                    }
+                } elseif ($section === 'payments') {
+                    if ($subFunctions === 'getpayment') {
+                        if ($expodeURL[4]) {
+                            $payment_id = $expodeURL[4];
+                            echo json_encode(['payments' => getPaymentById($payment_id)]);
                             http_response_code(200);
                             exit();
                         } else {
@@ -262,30 +274,6 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                     header('Location: /event?eventsection=beverages');
                     exit();
                 }
-            } elseif ($section === 'promotions') {
-                if ($function === 'createnew') {
-                    $number = htmlspecialchars(trim($_POST['number']));
-                    $name = htmlspecialchars(trim($_POST['name']));
-                    $number_of_tables = htmlspecialchars(trim($_POST['number_of_tables']));
-                    $capacity = htmlspecialchars(trim($_POST['capacity']));
-                    $details = htmlspecialchars(trim($_POST['details']));
-                    $result = createNewHall($number, $name, $number_of_tables, $capacity, $details);
-                    echo ($result);
-                    header('Location: /promotions');
-                    exit();
-                }
-            } elseif ($section === 'services') {
-                if ($function === 'createnew') {
-                    $number = htmlspecialchars(trim($_POST['number']));
-                    $name = htmlspecialchars(trim($_POST['name']));
-                    $number_of_tables = htmlspecialchars(trim($_POST['number_of_tables']));
-                    $capacity = htmlspecialchars(trim($_POST['capacity']));
-                    $details = htmlspecialchars(trim($_POST['details']));
-                    $result = createNewHall($number, $name, $number_of_tables, $capacity, $details);
-                    echo ($result);
-                    header('Location: /services');
-                    exit();
-                }
             } elseif ($section === 'clients') {
                 if ($function === 'createnew') {
                     $fullName = htmlspecialchars(trim($_POST['full_name']));
@@ -295,6 +283,30 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                     $result = createNewClient($fullName, $phoneNumber, $email, $address);
                     echo ($result);
                     header('Location: /clients');
+                    exit();
+                }
+
+            } elseif($section === 'payments'){
+                if ($function === 'createnew') {
+                    $client_id = htmlspecialchars(trim($_POST['client_id']));
+                    $amount = htmlspecialchars(trim($_POST['amount']));
+                    $status = htmlspecialchars(trim($_POST['status']));
+
+                    $result = createNewPayment( $amount, $status, $client_id);
+                    echo ($result);
+                    header('Location: /payments');
+                    exit();
+                } elseif ($function === 'update') {
+                    if($expodeURL[3]){
+                        $payment_id = $expodeURL[3];
+                        $client_id = htmlspecialchars(trim($_POST['client_id']));
+                        $amount = htmlspecialchars(trim($_POST['amount']));
+                        $status = htmlspecialchars(trim($_POST['status']));
+    
+                        $result = updateNewPayment($payment_id, $amount, $status, $client_id);
+                        echo ($result);
+                    }
+                    header('Location: /payments');
                     exit();
                 }
             } else {
@@ -351,7 +363,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                     }
                     header('Location: /event?eventsection=beverages');
                     exit();
-                }
+                }  
             } else {
                 header('Location: /404');
                 exit();
@@ -711,6 +723,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                 <thead>
                                     <tr>
                                         <th>ID</th>
+                                        <th>Name</th>
                                         <th>Per Plate Price</th>
                                         <th>Max Plates</th>
                                         <th>Actions</th>
@@ -720,6 +733,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                     <?php foreach (getAllFoods() as $row): ?>
                                         <tr>
                                             <td style="text-align: center;"><?= $row['id'] ?></td>
+                                            <td style="text-align: center;"><?= $row['name'] ?></td>
                                             <td style="text-align: center;"><?= $row['per_plate_price'] ?></td>
                                             <td style="text-align: center;"><?= $row['max_plates'] ?></td>
                                             <td>
@@ -1108,24 +1122,54 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                             </form>
                         </div>
                     </div>
-
-
-
-
                 </div>
                 <!-- Promotions End -->
 
             <?php elseif ($current_page === "/payments"): ?>
                 <!-- Payments -->
+                
                 <div class="content-container">
-                    <!-- <h1 style="text-align: center;">Payments</h1> -->
+                    <!-- <h1 style="text-align: center;">Payment</h1> -->
 
+                    <section class="header-container">
+                        <div class="button-container">
+                            <button id="btn-add" class="btn add" onclick="handleOpenAddForm()">Add A New Payment</button>
+                        </div>
+                    </section>
+                    <hr />
+                    <div class="add-container">
+                        <button id="add-btn-x" class="btn-x">X</button>
+                        <div class="add-box">
+
+                            <form action="/payments/createnew" method="post" enctype="multipart/form-data">
+                                <h3>Add Payment</h3>
+
+                                <select name="client_id" required class="box">
+                                    <option value="" disabled>Select The Client</option>
+                                    <?php foreach (getAllClients() as $row): ?>
+                                    <option value="<?= $row['id']?>"><?= $row['full_name'] ?> - <?= $row['phone_number'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+
+                                <input type="number" name="amount" required placeholder="Enter the amount" class="box" min="1" step="0.01" autocomplete="off">
+
+                                <select name="status" required class="box">
+                                    <option value="" disabled>Select Payment of Status</option>
+                                    <option value="pass">Pass</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+
+                                <button type="submit">Add Payment</button>
+                            </form>
+
+                        </div>
+                    </div>
                     <div class="table-content-section">
                         <h3>Payment Details</h3>
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Payment ID</th>
+                                    <th>ID</th>                                
                                     <th>User Name</th>
                                     <th>Amount</th>
                                     <th>Date</th>
@@ -1134,35 +1178,72 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>Dummy dummy</td>
-                                    <td>Rs. 12000.00</td>
-                                    <td>2024-11-23</td>
-                                    <td><span class="status completed">Completed</span></td>
-                                    <td>
-                                        <i class="fa fa-eye" title="View"></i>
-                                        <i class="fa fa-edit" title="Edit"></i>
-                                        <i class="fa fa-trash-alt" title="Delete"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>dum dum</td>
-                                    <td>Rs. 15000.00</td>
-                                    <td>2024-11-22</td>
-                                    <td><span class="status pending">Pending</span></td>
-                                    <td>
-                                        <i class="fa fa-eye" title="View"></i>
-                                        <i class="fa fa-edit" title="Edit"></i>
-                                        <i class="fa fa-trash-alt" title="Delete"></i>
-                                    </td>
-                                </tr>
+                                <?php foreach (getAllPayment() as $row): ?>
+                                    <tr>
+                                        <td style="text-align: center;"><?= $row['id'] ?></td>                                     
+                                        <td style="text-align: center;"><?= $row['client_name'] ?> - <?= $row['client_phone'] ?></td>
+                                        <td style="text-align: center;"><?= $row['amount'] ?></td>
+                                        <td style="text-align: center;"><?= $row['created_at'] ?></td>
+                                        <td style="text-align: center;"><?= $row['status'] ?></td>
+                                        <td>
+                                            <div style="display: flex; gap: 10px; justify-content: center;">
+                                                <button data-payment-id="<?= $row['id'] ?>" onclick="handlePaymentEdit(event)"><i class="fa fa-edit"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
+                    <div class="add-container" id="edit-container-payment">
+                        <button id="add-btn-x-edit-payment" class="btn-x">X</button>
+                        <div class="add-box">
 
+                            <form action="/payments/update" method="post" enctype="multipart/form-data">
+                                <h3>Edit Payment</h3>
+
+                                <select name="client_id" required class="box">
+                                    <option value="" disabled>Select The Client</option>
+                                    <?php foreach (getAllClients() as $row): ?>
+                                    <option value="<?= $row['id']?>"><?= $row['full_name'] ?> - <?= $row['phone_number'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+
+                                <input type="text" name="amount" required placeholder="Enter the amount" class="box" min="1" >
+
+                                <select name="status" required class="box">
+                                    <option value="" disabled>Select Payment of Status</option>
+                                    <option value="pass">Pass</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+                                <button type="submit">Update Payment</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
+                <script>
+                    async function handlePaymentEdit(event) {
+                            const paymentID = event.currentTarget.getAttribute('data-payment-id');
+                            const baseURL = window.location.origin + window.location.pathname + '/api/getpayment/' + paymentID;
+                            const editFormContainer = document.getElementById("edit-container-payment");
+
+                            editFormContainer.style.display = 'flex';
+                            document.getElementById('add-btn-x-edit-payment').addEventListener('click', function() {
+                                this.parentElement.style.display = 'none';
+                            });
+                            const response = await fetch(baseURL, {
+                                method: "GET",
+                            });
+                            if(response.ok){
+                                const data = await response.json();
+                                editFormContainer.getElementsByTagName('form')[0].action = `${window.location.origin}/payments/update/${paymentID}`;
+                                const listOfInputs = { client_id: 'select', amount: 'input', status: 'select'};
+                                for(let keynam in listOfInputs){
+                                    editFormContainer.querySelector(`${listOfInputs[keynam]}[name="${keynam}"]`).value = data['payments'][`${keynam}`];
+                                }
+                            }
+                        }
+                </script>
                 <!-- Payments End -->
 
             <?php elseif ($current_page === "/halls"): ?>
@@ -1224,7 +1305,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                         <td>
                                             <div style="display: flex; gap: 10px; justify-content: center;">
                                                 <!-- <button><i class="fa fa-eye"></i></button> -->
-                                                <button data-hall-id="<?= $row['id'] ?>" onclick="handleHallEdit(event)"><i class="fa fa-edit"></i></button>
+                                                <button data-hall-id="<?= $row['id'] ?>" oPaymentck="handleHallEdit(event)"><i class="fa fa-edit"></i></button>
                                                 <button data-hall-id="<?= $row['id'] ?>" onclick="handleHallDelete(event)"><i class="fa fa-trash-alt"></i></button>
                                             </div>
                                         </td>
@@ -1369,7 +1450,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                         <td>
                                             <div style="display: flex; gap: 10px; justify-content: center;">
                                                 <!-- <button><i class="fa fa-eye"></i></button> -->
-                                                <button data-hall-id="<?= $row['id'] ?>" onclick="handleHallEdit(event)" title="Edit"><i class="fa fa-edit"></i></button>
+                                                <button data-hall-id="<?= $row['id'] ?>" oPaymentck="handleHallEdit(event)" title="Edit"><i class="fa fa-edit"></i></button>
                                                 <button data-hall-id="<?= $row['id'] ?>" onclick="handleHallDelete(event)" title="Delete"><i class="fa fa-trash-alt"></i></button>
                                             </div>
                                         </td>
