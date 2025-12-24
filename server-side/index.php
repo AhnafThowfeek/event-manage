@@ -1,7 +1,9 @@
 <?php
+require 'vendor/autoload.php';
+
 session_start();
 
-header("Access-Control-Allow-Origin: http://eventpro.local");
+header("Access-Control-Allow-Origin: http://eventclient.local");
 
 require __DIR__ . '/halls.php';
 require __DIR__ . '/event.php';
@@ -9,6 +11,9 @@ require __DIR__ . '/admin.php';
 require __DIR__ . '/client.php';
 require __DIR__ . '/dashboard.php';
 require __DIR__ . '/payments.php';
+require __DIR__ . '/email.php';
+
+// sendmail();
 
 //  require __DIR__ . '/create_table.php';
 //  createAllTables();
@@ -22,6 +27,7 @@ $subFunctions = explode('/', $current_page)[3] ?? null;
 $eventSection = htmlspecialchars($_GET['eventsection'] ?? 'booked-events') ?? null;
 
 // echo($current_page);
+// echo($section);
 // echo($search_params);
 
 if($function === 'api'){
@@ -73,9 +79,9 @@ if($function === 'api'){
                     if(!$result){
                         throw new Exception("Creating Event Faild.");
                     }
-                    header('Location: http://eventpro.local/book_event_success.html');
+                    header('Location: http://eventclient.local/book_event_success.html');
                 } catch (Exception $e) {
-                    header('Location: http://eventpro.local/book_event_error.html');
+                    header('Location: http://eventclient.local/book_event_error.html');
                 }
                 exit();
             }
@@ -163,7 +169,6 @@ if($function === 'api'){
     exit();
 }
 
-
 switch ($_SERVER["REQUEST_METHOD"]) {
     case "POST":
         if ($section === 'login') {
@@ -173,6 +178,22 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                 $result = adminLogin($adminname, $password);
                 echo ($result);
                 header('Location: /');
+                exit();
+            }
+        } elseif ($section === 'paymentgateway'){
+            if ($function === 'submit') {
+                $submit_client_id = htmlspecialchars(trim($_GET['c']));
+                $submit_payment_id = htmlspecialchars(trim($_GET['p']));
+
+                $result = isPaymentUpdateSubmition($submit_client_id, $submit_payment_id);
+                // echo ($submit_client_id);
+                // echo ($submit_payment_id);
+                // error_log($submit_payment_id, 3, __DIR__ . "/error.log");
+                if($result){
+                    header('Location: http://eventclient.local/payment_success.html');
+                } else {
+                    header('Location: http://eventclient.local/payment_failed.html');
+                }
                 exit();
             }
         }
@@ -412,6 +433,15 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                     }
                     exit();
                 }  
+            } elseif ($section === 'payments') {
+                if ($function === 'sendpaymentmail') {
+                    if ($expodeURL[3]) {
+                        $payment_id = $expodeURL[3];
+                        $result = sendPaymentMail($payment_id);
+                        echo ($result);
+                    }
+                    exit();
+                }  
             } else {
                 header('Location: /404');
                 exit();
@@ -457,10 +487,145 @@ switch ($_SERVER["REQUEST_METHOD"]) {
             </div>
         </div>
         <!-- Login End -->
+    <?php elseif($current_page === "/paymentgateway"): ?>
+        <!-- client: /pyamentgateway?c={client_id}&p={payment_id} -->
+         <?php
+            $paymentgateway_client_id = htmlspecialchars(trim($_GET['c']));
+            $paymentgateway_payment_id = htmlspecialchars(trim($_GET['p']));
+         ?>
+         <?php if(isPaymentVerify($paymentgateway_client_id, $paymentgateway_payment_id)): ?>
+            <?php $paymentDetails = getPaymentById($paymentgateway_payment_id) ?>
+        <div class="container">
+            <div class="card-container">
+                <div class="front">
+                    <div class="image">
+                        <img src="assets/chip.png" alt="">
+                        <img src="assets/visa.png" alt="">
+                    </div>
+                    <div class="card-number-box">################</div>
+                    <div class="flexbox">
+                        <div class="box">
+                            <span>card holder</span>
+                            <div class="card-holder-name">full name</div>
+                        </div>
+                        <div class="box">
+                            <span>expires</span>
+                            <div class="expiration">
+                                <span class="exp-month">mm</span>
+                                <span class="exp-year">yy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="back">
+                    <div class="stripe"></div>
+                    <div class="box">
+                        <span>cvv</span>
+                        <div class="cvv-box"></div>
+                        <img src="assets/visa.png" alt="">
+                    </div>
+                </div>
+
+            </div>
+ 
+            <!-- /pyamentgateway/submit?c={client_id}&p={payment_id} -->
+            <form action="/paymentgateway/submit?c=<?=$paymentgateway_client_id?>&p=<?=$paymentgateway_payment_id?>" method="post" enctype="multipart/form-data">
+                <h1>Pay Amount: LKR <?= number_format($paymentDetails['amount'], 2)?></h1>
+                <div class="inputBox">
+                    <span>card number</span>
+                    <input type="text" maxlength="16" class="card-number-input" onkeypress="if (isNaN(String.fromCharCode(event.keyCode))) return false;" required>
+                </div>
+                <div class="inputBox">
+                    <span>card holder</span>
+                    <input type="text" class="card-holder-input" required>
+                </div>
+                <div class="flexbox">
+                    <div class="inputBox">
+                        <span>expiration mm</span>
+                        <select name="" id="" class="month-input" required>
+                            <option value="month" selected disabled>month</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                    </div>
+                    <div class="inputBox">
+                        <span>expiration yy</span>
+                        <select name="" id="" class="year-input" required>
+                            <option value="year" selected disabled>year</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+                    <div class="inputBox">
+                        <span>cvv</span>
+                        <input type="text" maxlength="4" class="cvv-input" onkeypress="if (isNaN(String.fromCharCode(event.keyCode))) return false;" required>
+                    </div>
+                </div>
+                <input type="submit" value="submit" class="submit-btn">
+            </form>
+
+        </div>    
+        <script>
+            document.querySelector('.card-number-input').oninput = () =>{
+            document.querySelector('.card-number-box').innerText = document.querySelector('.card-number-input').value;
+            }
+
+            document.querySelector('.card-holder-input').oninput = () =>{
+            document.querySelector('.card-holder-name').innerText = document.querySelector('.card-holder-input').value;
+            }
+
+            document.querySelector('.month-input').oninput = () =>{
+            document.querySelector('.exp-month').innerText = document.querySelector('.month-input').value;
+            }
+
+            document.querySelector('.year-input').oninput = () =>{
+            document.querySelector('.exp-year').innerText = document.querySelector('.year-input').value;
+            }
+
+            document.querySelector('.cvv-input').onmouseenter = () =>{
+            document.querySelector('.front').style.transform = 'perspective(1000px) rotateY(-180deg)';
+            document.querySelector('.back').style.transform = 'perspective(1000px) rotateY(0deg)';
+            }
+
+            document.querySelector('.cvv-input').onmouseleave = () =>{
+            document.querySelector('.front').style.transform = 'perspective(1000px) rotateY(0deg)';
+            document.querySelector('.back').style.transform = 'perspective(1000px) rotateY(180deg)';
+            }
+
+            document.querySelector('.cvv-input').oninput = () =>{
+            document.querySelector('.cvv-box').innerText = document.querySelector('.cvv-input').value;
+            }
+        </script>
+        <?php else: ?>
+            <?php
+                echo "403 Forbidden.";
+                http_response_code(403);
+                exit();
+            ?>
+        <?php endif; ?>
     <?php else:?>
     <?php if (!isset($_SESSION['adminname'])) {header('Location: /login'); exit();} ?>
 
-    <div class="container">
+    <div class="sidebar-container">
         <!-- SideBar -->
         <div class="sidebar">
             <ul>
@@ -481,12 +646,6 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                         <div class="title">Events</div>
                     </a>
                 </li>
-                <li <?= $current_page === "/promotions"? 'class="selected"' : ''?>>
-                    <a href="/promotions">
-                        <i class="fa-solid fa-circle-up"></i>
-                        <div class="title">Promotion</div>
-                    </a>
-                </li>
                 <li <?= $current_page === "/payments"? 'class="selected"' : ''?>>
                     <a href="/payments">
                         <i class="fa-solid fa-money-check-dollar"></i>
@@ -497,12 +656,6 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                     <a href="/halls">
                         <i class="fa-solid fa-place-of-worship"></i>
                         <div class="title">Halls</div>
-                    </a>
-                </li>
-                <li <?= $current_page === "/services"? 'class="selected"' : ''?>>
-                    <a href="/services">
-                        <i class="fa-solid fa-bell-concierge"></i>
-                        <div class="title">Services</div>
                     </a>
                 </li>
                 <li <?= $current_page === "/clients"? 'class="selected"' : ''?>>
@@ -534,15 +687,13 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                     <?php foreach(getCountsList() as $kaynam => $cardvalue): ?>
                     <div class="card">
                         <div class="card-content">
-                            <div class="number"><?= $cardvalue?></div>
+                            <div class="number"> <?php if($kaynam === 'Earnings'): ?>LKR<?php endif; ?> <?= $cardvalue?></div>
                             <div class="card-name"><?= $kaynam?></div>
                             <div class="icon-box">
                                 <?php if($kaynam === 'Booked Events'): ?>
                                 <i class="fa-solid fa-pen-to-square"></i>
                                 <?php elseif($kaynam === 'Events'): ?>
                                 <i class="fa-solid fa-pen-to-square"></i>
-                                <?php elseif($kaynam === 'Pending Payments'): ?>
-                                <i class="fa-solid fa-money-check-dollar"></i>
                                 <?php elseif($kaynam === 'Halls'): ?>
                                 <i class="fa-solid fa-place-of-worship"></i>
                                 <?php elseif($kaynam === 'Earnings'): ?>
@@ -568,122 +719,16 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                 <td>Actions</td>
                             </thead>
                             <tbody>
+                                <?php foreach(getEventsTopList() as $topEvents): ?>
                                 <tr>
-                                    <td>Liam Smith Doe</td>
-                                    <td>Wedding</td>
-                                    <td>Wedding-01</td>
+                                    <td><?= $topEvents['client_name'] ?> - <?= $topEvents['client_phone'] ?></td>
+                                    <td><?= $topEvents['event_name'] ?></td>
+                                    <td><?= $topEvents['hall_number'] ?> - <?= $topEvents['hall_name'] ?></td>
                                     <td>
                                         <i class="far fa-eye"></i>
-                                        <i class="far fa-edit"></i>
-                                        <i class="far fa-trash-alt"></i>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>Liam Smith Doe</td>
-                                    <td>Wedding</td>
-                                    <td>Wedding-01</td>
-                                    <td>
-                                        <i class="far fa-eye"></i>
-                                        <i class="far fa-edit"></i>
-                                        <i class="far fa-trash-alt"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Liam Smith Doe</td>
-                                    <td>Wedding</td>
-                                    <td>Wedding-01</td>
-                                    <td>
-                                        <i class="far fa-eye"></i>
-                                        <i class="far fa-edit"></i>
-                                        <i class="far fa-trash-alt"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Liam Smith Doe</td>
-                                    <td>Wedding</td>
-                                    <td>Wedding-01</td>
-                                    <td>
-                                        <i class="far fa-eye"></i>
-                                        <i class="far fa-edit"></i>
-                                        <i class="far fa-trash-alt"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Liam Smith Doe</td>
-                                    <td>Wedding</td>
-                                    <td>Wedding-01</td>
-                                    <td>
-                                        <i class="far fa-eye"></i>
-                                        <i class="far fa-edit"></i>
-                                        <i class="far fa-trash-alt"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Liam Smith Doe</td>
-                                    <td>Wedding</td>
-                                    <td>Wedding-01</td>
-                                    <td>
-                                        <i class="far fa-eye"></i>
-                                        <i class="far fa-edit"></i>
-                                        <i class="far fa-trash-alt"></i>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="customer-review">
-                        <div class="heading">
-                            <h2>Customer Reviews</h2>
-                            <a href="#" class="btn">View All</a>
-                        </div>
-                        <table class="visiting">
-                            <thead>
-                                <td>Photo</td>
-                                <td>Name</td>
-                                <td>Event</td>
-                                <td>Detail</td>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <div class="img-box-small">
-                                            <img src="assets/person.jpg" alt="">
-                                        </div>
-                                    </td>
-                                    <td>Vipu</td>
-                                    <td>Seminar</td>
-                                    <td><i class="far fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="img-box-small">
-                                            <img src="assets/person.jpg" alt="">
-                                        </div>
-                                    </td>
-                                    <td>Vipu</td>
-                                    <td>Wedding</td>
-                                    <td><i class="far fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="img-box-small">
-                                            <img src="assets/person.jpg" alt="">
-                                        </div>
-                                    </td>
-                                    <td>Vipu</td>
-                                    <td>Party</td>
-                                    <td><i class="far fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="img-box-small">
-                                            <img src="assets/person.jpg" alt="">
-                                        </div>
-                                    </td>
-                                    <td>Vipu</td>
-                                    <td>Wedding</td>
-                                    <td><i class="far fa-eye"></i></td>
-                                </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -741,7 +786,9 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                             <p>Description: <?= $row['details'] ?></p>
                                             <?php endif; ?>
                                             <h4>LKR <?= number_format($row['event_fee'], 2) ?></h4>
+                                            <?php if(isset($row['client_name'])): ?>
                                             <p>Client: <?= $row['client_name'] ?> - <?= $row['client_phone'] ?></p>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="event-actions">
                                             <div>
@@ -1178,35 +1225,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                 </div>
                 <!-- Event End -->
 
-            <?php elseif ($current_page === "/promotions"): ?>
-                <!-- Promotions -->
-                <div class="content-container">
-                    <!-- <h1 style="text-align: center;">Promotions</h1> -->
-
-                    <section class="header-container">
-                        <div class="button-container">
-                            <button id="btn-add" class="btn add" onclick="handleOpenAddForm()">Add A New Promotion</button>
-                        </div>
-                    </section>
-                    <hr />
-                    <div class="add-container">
-                        <button id="add-btn-x" class="btn-x">X</button>
-                        <div class="add-box">
-
-                            <form action="" method="post">
-                                <h3>Add Promotions Now</h3>
-                                <input type="hidden" name="req" value="promotion" />
-                                <input type="text" name="title" required placeholder="Enter Title of the promotion" class="box" maxlength="100">
-                                <input type="datetime-local" name="promotion_date" required placeholder="Enter the promotion date" class="box">
-                                <textarea type="text" name="details" required placeholder="details of the promotion" class="box" maxlength="254"></textarea>
-                                <input type="file" name="photo" accept=".jpg, .jpeg, .png" required class="box">
-                                <button type="submit">Add Promotion</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <!-- Promotions End -->
-
+           
             <?php elseif ($current_page === "/payments"): ?>
                 <!-- Payments -->
                 
@@ -1237,6 +1256,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
 
                                 <select name="status" required class="box">
                                     <option value="" disabled>Select Payment of Status</option>
+                                    <option value="processing">Processing</option>
                                     <option value="pass">Pass</option>
                                     <option value="failed">Failed</option>
                                 </select>
@@ -1264,12 +1284,13 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                                     <tr>
                                         <td style="text-align: center;"><?= $row['id'] ?></td>                                     
                                         <td style="text-align: center;"><?= $row['client_name'] ?> - <?= $row['client_phone'] ?></td>
-                                        <td style="text-align: center;"><?= $row['amount'] ?></td>
+                                        <td style="text-align: center;">LKR <?= number_format($row['amount'], 2) ?></td>
                                         <td style="text-align: center;"><?= $row['created_at'] ?></td>
-                                        <td style="text-align: center;"><?= $row['status'] ?></td>
+                                        <td style="text-align: center;"><?= ucfirst($row['status']) ?></td>
                                         <td>
                                             <div style="display: flex; gap: 10px; justify-content: center;">
-                                                <button data-payment-id="<?= $row['id'] ?>" onclick="handlePaymentEdit(event)"><i class="fa fa-edit"></i></button>
+                                                <button data-payment-id="<?= $row['id'] ?>" onclick="handlePaymentEdit(event)" title="Edit Payment"><i class="fa fa-edit"></i></button>
+                                                <button data-payment-id="<?= $row['id'] ?>" onclick="handlePaymentSend(event)" title="Send Payment Notify"><i class="fa-solid fa-paper-plane"></i></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -1295,6 +1316,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
 
                                 <select name="status" required class="box">
                                     <option value="" disabled>Select Payment of Status</option>
+                                    <option value="processing">Processing</option>
                                     <option value="pass">Pass</option>
                                     <option value="failed">Failed</option>
                                 </select>
@@ -1304,6 +1326,14 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                     </div>
                 </div>
                 <script>
+                    function handlePaymentSend(event) {
+                            const paymentID = event.currentTarget.getAttribute('data-payment-id');
+                            const baseURL = window.location.origin + window.location.pathname + '/sendpaymentmail/' + paymentID;
+                            fetch(baseURL, {
+                                method: "DELETE"
+                            });
+                            window.location.reload();
+                        }
                     async function handlePaymentEdit(event) {
                             const paymentID = event.currentTarget.getAttribute('data-payment-id');
                             const baseURL = window.location.origin + window.location.pathname + '/api/getpayment/' + paymentID;
@@ -1453,35 +1483,6 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                         }
                 </script>
                 <!-- Halls End -->
-
-            <?php elseif ($current_page === "/services"): ?>
-                <!-- Services -->
-                <div class="content-container">
-                    <!-- <h1 style="text-align: center;">Services</h1> -->
-
-                    <section class="header-container">
-                        <div class="button-container">
-                            <button id="btn-add" class="btn add" onclick="handleOpenAddForm()">Add A New Services</button>
-                        </div>
-                    </section>
-                    <hr />
-                    <div class="add-container">
-                        <button id="add-btn-x" class="btn-x">X</button>
-                        <div class="add-box">
-
-                            <form action="" method="post">
-                                <h3>Add Service Now</h3>
-                                <input type="hidden" name="req" value="service" />
-                                <input type="text" name="title" required placeholder="Enter Title of the Service" class="box" maxlength="100">
-                                <textarea type="text" name="details" required placeholder="details of the service" class="box" maxlength="254"></textarea>
-                                <input type="file" name="photo" accept=".jpg, .jpeg, .png" required class="box">
-                                <button type="submit">Add Service</button>
-                            </form>
-                        </div>
-                    </div>
-
-                </div>
-                <!-- Services End -->
             <?php elseif ($current_page === "/clients"): ?>
                 <!-- Clients -->
                 <div class="content-container">
@@ -1551,12 +1552,11 @@ switch ($_SERVER["REQUEST_METHOD"]) {
                 </div>
             <?php endif; ?>
 
-
-
         </div>
     </div>
 
     <?php endif;?>
+
     <script>
         function handleOpenAddForm() {
             document.getElementsByClassName("add-container")[0].style.display = 'flex';

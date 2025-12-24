@@ -20,9 +20,9 @@
             <a href="about.html">About Us</a>
             <a href="services.html">Services</a>
             <a href="events.html">Events</a>
-            <a href="promotion.html">Promotions</a>
             <a href="contact.html">Contact</a>
         </nav>
+
 
         <div class="user-icons" style="display: none;">
             <div id="user-btn" class="fas fa-user"></div>
@@ -40,7 +40,7 @@
     </header>
 
     <section class="insert-data">
-        <form action="http://eventproadmin.local/form-submit/api" method="post" enctype="multipart/form-data">
+        <form action="http://eventmanage.local/form-submit/api" method="post" enctype="multipart/form-data">
             <h3>Fullfill the below form to book the Event</h3>
 
             <!-- Client Details -->
@@ -176,10 +176,10 @@
             const formattedDateTime = now.toISOString().slice(0, 16); // Format to 'YYYY-MM-DDTHH:mm'
             eventDatePicker.min = formattedDateTime;
 
-
+            const baseURLAPI = 'http://eventmanage.local';
             const eventsSelecter = document.getElementById('select-event');
             const getEvents = async () => {
-                const baseURL = 'http://eventproadmin.local/event/api/getallevents';
+                const baseURL = baseURLAPI + '/event/api/getallevents';
                 const response = await fetch(baseURL, {
                     method: 'GET'
                 });
@@ -196,7 +196,7 @@
 
             const hallsSelecter = document.getElementById('select-halls');
             const getHalls = async () => {
-                const baseURL = 'http://eventproadmin.local/halls/api/getallhalls';
+                const baseURL = baseURLAPI + '/halls/api/getallhalls';
                 const response = await fetch(baseURL, {
                     method: 'GET'
                 });
@@ -213,7 +213,7 @@
 
             const foodsSelecter = document.getElementById('select-foods');
             const getFoods = async () => {
-                const baseURL = 'http://eventproadmin.local/event/api/getallfoods';
+                const baseURL = baseURLAPI + '/event/api/getallfoods';
                 const response = await fetch(baseURL, {
                     method: 'GET'
                 });
@@ -230,7 +230,7 @@
 
             const beveragesSelecter = document.getElementById('select-beverages');
             const getBeverages = async () => {
-                const baseURL = 'http://eventproadmin.local/event/api/getallbeverages';
+                const baseURL = baseURLAPI + '/event/api/getallbeverages';
                 const response = await fetch(baseURL, {
                     method: 'GET'
                 });

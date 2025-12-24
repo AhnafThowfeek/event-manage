@@ -371,6 +371,27 @@ function getEventsCreatedList() {
     }
 }
 
+function getEventsTopList() {
+    $db = connection();
+    try {
+        $query = $db->prepare(
+            "SELECT e.event_name, c.full_name AS client_name, c.phone_number AS client_phone, h.name AS hall_name, h.number AS hall_number
+             FROM `events` e
+             LEFT JOIN `clients` c ON e.client_id = c.id
+             LEFT JOIN `halls` h ON e.hall_id = h.id
+             WHERE e.client_id IS NOT NULL
+             ORDER BY e.created_at DESC
+             LIMIT 10"
+        );
+        $query->execute();
+        $events = $query->fetchAll(PDO::FETCH_ASSOC);
+        return $events;
+    } catch (PDOException $e) {
+        return "Error When Fetching Events with client_id and hall_id: " . $e->getMessage();
+    }
+}
+
+
 function deleteEventById($event_id) {
     $db = connection();
     try {

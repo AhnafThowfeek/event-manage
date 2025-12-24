@@ -95,7 +95,7 @@ function createPaymentsTable($conn){
             id CHAR(36) NOT NULL,
             amount DECIMAL(20,2) NOT NULL,
             client_id INT NULL,
-            status ENUM('failed', 'pass') NOT NULL DEFAULT 'failed',
+            status ENUM('failed', 'pass', 'processing') NOT NULL DEFAULT 'failed',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),

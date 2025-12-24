@@ -66,6 +66,86 @@ function getPaymentById($payment_id) {
     }
 }
 
+function sendPaymentMail($payment_id) {
+    $db = connection();
 
+    try {
+        // Fetch client details based on payment_id
+        $query = $db->prepare("
+            SELECT c.id, c.full_name, c.email 
+            FROM payments p 
+            JOIN clients c ON p.client_id = c.id 
+            WHERE p.id = ?
+        ");
+        $query->execute([$payment_id]);
+        $clientData = $query->fetch(PDO::FETCH_ASSOC);
+
+        // Check if client data exists
+        if ($clientData) {
+            $client_id = $clientData['id'];
+            $client_name = $clientData['full_name'];
+            $client_email = $clientData['email'];
+
+            // Call the helper function to send the email
+            if (sendMailByPayments($client_name, $client_email, "http://eventmanage.local/paymentgateway?c=$client_id&p=$payment_id")) {
+                return "Mail sent successfully to {$client_email}.";
+            } else {
+                return "Failed to send mail to {$client_email}.";
+            }
+        } else {
+            return "No client found for the provided payment ID.";
+        }
+    } catch (PDOException $e) {
+        return "Error: " . $e->getMessage();
+    }
+}
+
+
+function isPaymentVerify($client_id, $payment_id) {
+    $db = connection();
+    try {
+        $query = $db->prepare("SELECT p.id FROM payments p JOIN clients c ON p.client_id = c.id WHERE p.id = ? AND c.id = ? AND p.status = 'processing'");
+        $query->execute([$payment_id, $client_id]);
+
+        if ($query->fetch()) {
+            return true;
+        } else {
+            return false;
+        }
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+        return false;
+    }
+}
+
+function isPaymentUpdateSubmition($client_id, $payment_id) {
+    $db = connection();
+    try {
+        $query = $db->prepare("SELECT p.id FROM payments p JOIN clients c ON p.client_id = c.id WHERE p.id = ? AND c.id = ?");
+        $query->execute([$payment_id, $client_id]);
+
+        if ($query->fetch()) {
+            $eventCheckQuery = $db->prepare("SELECT id FROM events WHERE client_id = ?");
+            $eventCheckQuery->execute([$client_id]);
+
+            if ($eventCheckQuery->fetch()) {
+                $updatePaymentStatus = $db->prepare("UPDATE payments SET status = 'pass' WHERE id = ?");
+                $updatePaymentStatus->execute([$payment_id]);
+
+                $updateEventStatus = $db->prepare("UPDATE events SET status = 'paid' WHERE client_id = ?");
+                $updateEventStatus->execute([$client_id]);
+
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+        return false;
+    }
+}
 
 

@@ -6,7 +6,6 @@ function getCountsList() {
     $listOfCounts = [
         'Booked Events' => 0,
         'Events' => 0,
-        'Pending Payments' => 0,
         'Halls' => 0,
         'Earnings' => 0
     ];
@@ -22,20 +21,15 @@ function getCountsList() {
         $result = $query->fetch(PDO::FETCH_ASSOC);
         $listOfCounts['Events'] = $result['count'] ?? 0;
 
-        $query = $db->prepare("SELECT COUNT(*) as count FROM `events` WHERE `status` = 'processing'");
-        $query->execute();
-        $result = $query->fetch(PDO::FETCH_ASSOC);
-        $listOfCounts['Pending Payments'] = $result['count'] ?? 0;
-
         $query = $db->prepare("SELECT COUNT(*) as count FROM `halls`");
         $query->execute();
         $result = $query->fetch(PDO::FETCH_ASSOC);
         $listOfCounts['Halls'] = $result['count'] ?? 0;
 
-        $query = $db->prepare("SELECT SUM(amount) as total FROM `payments` WHERE `status` = 'paid'");
+        $query = $db->prepare("SELECT SUM(amount) as total FROM `payments` WHERE `status` = 'pass'");
         $query->execute();
         $result = $query->fetch(PDO::FETCH_ASSOC);
-        $listOfCounts['Earnings'] = $result['total'] ?? 0;
+        $listOfCounts['Earnings'] = number_format($result['total'], 2) ?? 0;
 
         return $listOfCounts;
     } catch (Exception $e) {

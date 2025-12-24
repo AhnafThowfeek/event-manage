@@ -20,11 +20,10 @@
             <a href="about.html">About Us</a>
             <a href="services.html">Services</a>
             <a href="events.html">Events</a>
-            <a href="promotion.html">Promotions</a>
             <a href="contact.html">Contact</a>
         </nav>
 
-        <div class="user-icons">
+        <div class="user-icons" style="display: none;">
             <div id="user-btn" class="fas fa-user"></div>
         </div>
         <div class="profile">
@@ -112,9 +111,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const eventContainer = document.getElementById('event-box-container');
+            const baseURLAPI = 'http://eventmanage.local';
             const getEvents = async () => {
                 console.log("Working Gettings");
-                const baseURL = 'http://eventproadmin.local/event/api/getallevents';
+                const baseURL = baseURLAPI + '/event/api/getallevents';
                 const response = await fetch(baseURL, {
                     method: 'GET'
                 });
@@ -124,7 +124,7 @@
                         console.log(event);
                         const container = document.createElement('div');
                         container.innerHTML = `<div class="box">
-                                                    <img src="http://eventproadmin.local/${event.event_image_url}" alt="">
+                                                    <img src="${baseURLAPI}/${event.event_image_url}" alt="">
                                                     <h3 class="title">${event.event_name}</h3>
                                                     <div class="details">
                                                         <p>${event.details}</p>
